@@ -133,10 +133,12 @@ void main()
     vec4 color;
 	if (use_color_clip_plane) {
 		color.rgb = (color_clip_plane_dot < 0.0) ? uniform_color_clip_plane_1.rgb : uniform_color_clip_plane_2.rgb;
-		color.a = uniform_color.a;
+		color.a = 1.0; // Force full opaque values
     }
-    else
+    else {
 	    color = uniform_color;
+        color.a = 1.0; // FIX: Force transparency alpha layer to 1.0 to drop the translucent tint mask
+    }
 
     if (slope.actived) {
          if(world_pos.z<0.1&&world_pos.z>-0.1)
