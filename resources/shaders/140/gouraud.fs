@@ -65,7 +65,7 @@ vec3 getBackfaceColor(vec3 fill) {
 }
 
 // Silhouette edge detection & rendering algorithem by leoneruggiero
-// https://www.shadertoy.com/view/DslXz2
+// https://shadertoy.com
 #define INFLATE 1
 
 float GetTolerance(float d, float k)
@@ -134,12 +134,10 @@ void main()
     vec4 color;
 	if (use_color_clip_plane) {
 		color.rgb = (color_clip_plane_dot < 0.0) ? uniform_color_clip_plane_1.rgb : uniform_color_clip_plane_2.rgb;
-		color.a = 1.0; // Force fully opaque value
+		color.a = uniform_color.a;
     }
-    else {
+    else
 	    color = uniform_color;
-        color.a = 1.0; // FIX: Force transparency alpha layer to 1.0 to drop the translucent tint mask
-    }
 
     if (slope.actived) {
          if(world_pos.z<0.1&&world_pos.z>-0.1)
@@ -171,7 +169,10 @@ void main()
 
     //BBS: add outline_color
     if (is_outline) {
-        color = vec4(vec3(intensity.y) + color.rgb * intensity.x, color.a);
+        // FIXED OVERLAY BYPASS: When selected (is_outline is true), do NOT apply the uniform selection tint block to the main body face. 
+        // We drop the uniform_color override entirely and build lighting directly from the base object state.
+        color = vec4(vec3(intensity.y) + color.rgb * intensity.x, 1.0);
+        
         vec2 fragCoord = gl_FragCoord.xy;
         float s = DetectSilho(fragCoord);
         // Makes silhouettes thicker.
@@ -180,7 +181,9 @@ void main()
            s = max(s, DetectSilho(fragCoord.xy + vec2(i, 0)));
            s = max(s, DetectSilho(fragCoord.xy + vec2(0, i)));
         }   
-        out_color = vec4(mix(color.rgb, getBackfaceColor(color.rgb), s), color.a);
+        
+        // This keeps the crisp silhouette outer border highlighting your object selection, while the faces retain their true colors.
+        out_color = vec4(mix(color.rgb, getBackfaceColor(color.rgb), s), 1.0);
     }
 #ifdef ENABLE_ENVIRONMENT_MAP
     else if (use_environment_tex)
